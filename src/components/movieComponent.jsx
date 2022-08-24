@@ -3,26 +3,45 @@ import {getMovies} from '../services/fakeMovieService'
 import Like from "./likeComponent";
 import Pagination from "./paginationComponent";
 import {paginateUtil} from "../services/paginateUtil";
+import Genres from "./genersComponent";
+import {getGenres} from "../services/fakeGenreService";
 
 class Movie extends Component {
     state = {
-        movies : getMovies(),
+        movies : [],
+        genres : [],
         pageSize : 4,
         currentPage : 1
+
+    }
+
+    componentDidMount() {
+        this.setState({
+            movies : getMovies(),
+            genres : getGenres()
+        })
     }
 
     handlePageChange = (page) => {
         this.setState({currentPage: page})
     }
 
+    handleGenresSelect = (genres) => {
+        this.setState({selectedGenres: genres, currentPage : 1})
+    }
+
     render() {
         return (
             <main className="container">
-                <div>
-                    <div>
-                        {this.numberOfMoviesInDB()}
+                <div className="row">
+                    <div className="col-2">
+                        <Genres
+                            genres={this.state.genres}
+                            onGenresSelect={this.handleGenresSelect}
+                            selectedGenres={this.state.selectedGenres}
+                        />
                     </div>
-                    <div>
+                    <div className="col">
                         {this.state.movies.length !== 0 && this.renderTable()}
                     </div>
                 </div>
@@ -36,10 +55,14 @@ class Movie extends Component {
     }
 
     renderTable(){
-        const {movies : movieAll, pageSize, currentPage} = this.state
-        let movies = paginateUtil(this.state.movies, this.state.pageSize, this.state.currentPage)
+        const {movies : movieAll, pageSize, currentPage, selectedGenres} = this.state
+        const selectedGenresMovie = selectedGenres ?
+            movieAll.filter(m => m.genre._id === selectedGenres._id) : movieAll;
+        let movies = paginateUtil(selectedGenresMovie, pageSize, currentPage)
         return (
             <div>
+                {selectedGenresMovie.length === 0 ? <h3>No Movies in the Database</h3> :
+                    <h3>Number of movies in the database is {selectedGenresMovie.length}</h3>}
                 <table className="table">
                     <thead>
                     <tr>
@@ -78,7 +101,7 @@ class Movie extends Component {
                     </tbody>
                 </table>
                 <Pagination
-                    moviesCount={movieAll.length}
+                    moviesCount={selectedGenresMovie.length}
                     pageSize = {pageSize}
                     currentPage ={currentPage}
                     onPageChange={this.handlePageChange}
